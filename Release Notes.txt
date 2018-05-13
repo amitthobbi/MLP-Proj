@@ -1,0 +1,19 @@
+5/13/2018 --
+
+MLP-Python
+
+A python code to read iris dataset from iris_test and iris_train
+
+Displays Weights,Confusion matrix,accuracy
+
+
+lab3_1.cpp
+
+Read from iris_test2 and iris_train2
+In these csv files the target is shifted to the first column.
+
+Added Get Weights functionality,
+Improved Readability
+
+
+
