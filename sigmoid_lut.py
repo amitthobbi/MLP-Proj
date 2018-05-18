@@ -12,7 +12,7 @@ USAGE:
     and the number of steps (table entries)
 
     Note that the output hex format is NOT Floating Point. It is a fixed point integer
-    output of the form: U1.<resolution>. There is one bit to signify when the output has reached
+    output of the form: U1.<precision>. There is one bit to signify when the output has reached
     the estimated saturation threshold for sigmoid, x > 8, f(x) = 1
 
 """
@@ -28,7 +28,7 @@ import os
 filename = "sigmoid_lut_0_1.csv"    # Output File Name
 stop = 1.0                          # End Value (of x range)
 steps = 256                         # Number of table entries
-resolution = 15                     # Size of Fixed Point (unsigned)
+precision = 15                      # Size of Fixed Point "Fractional Component" (unsigned)
 
 # Output File Path and Name:
 outfile = os.path.join(os.path.dirname(os.path.realpath(__file__)), filename)
@@ -41,7 +41,7 @@ def fixed_point(x):
     fp = x
     tmp = x
     while True:
-        if tmp > (2**resolution)-1:
+        if tmp > (2**precision)-1:
             return format(int(fp), '#x')
         fp = tmp
         tmp = tmp * 10
@@ -69,5 +69,5 @@ with open(outfile, "w") as out_file:
     out_file.write(sigmoid_str)
 
 # Print Results:
-print("\nEntries: " + str(cnt) + "\tStep Size: " + str(stop/steps) + "\tResolution: " + str(resolution) + " bits")
+print("\nEntries: " + str(cnt) + "\tStep Size: " + str(stop/steps) + "\tprecision: " + str(precision) + " bits")
 print("\nThe file: " + outfile + " has been created.")
