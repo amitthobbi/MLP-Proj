@@ -15,6 +15,7 @@
 //#include "mlp.h"
 #include "csv.h"        /* CSV Parsint lib */
 #include "fixedPoint.h" /* FixedPoint Object Class */
+
 #include <iostream>
 #include <cmath>
 #include <string>
@@ -22,10 +23,10 @@
 #include <sstream>
 #include <iterator>
 #include <fstream>
-#include <time.h>       /* time */
 #include <random>
 #include <iomanip>
 
+using namespace std;
 
 
 /****** MLP CONFIGURATION **********/
@@ -59,14 +60,18 @@
  * 2 = Iris Virginica
 */
 
+/***** FUNCTION PROTOTYPES ****/
+void showFixedPointTest();
+
 
 
 /****** MAIN LOOP *******/
 
 int main() {
 
+    /*
     // Check Settings
-    static_assert( (TEST_SIZE + TRAIN_SIZE) == DATASET_SIZE );
+    assert( (TEST_SIZE + TRAIN_SIZE) == DATASET_SIZE );
 
     // MLP Data Sets:
     u16 logistic_lut[LUT_SIZE];                         // Logistic LUT
@@ -102,7 +107,7 @@ int main() {
         }
     }
 
-
+    /*
     // Load Iris Data Set:
     // Shuffle and split up data using random distribution:
     io::CSVReader<5> iris_in(IRIS_DATA);
@@ -114,7 +119,7 @@ int main() {
 
         // Add to test set:
         if(  (dist(eng) % 2 && test_i < TEST_SIZE) || train_i >= TRAIN_SIZE){
-            test_data[test_i][0]. = sepal_l;
+            test_data[test_i][0] = sepal_l;
             test_data[test_i][1] = sepal_w;
             test_data[test_i][2] = petal_l;
             test_data[test_i][3] = petal_w;
@@ -155,8 +160,39 @@ int main() {
 
     // Print Results
 
+    */
 
+    showFixedPointTest();
 
 
     return 0;
+}
+
+
+/**
+ * Show the fixed point testing
+ */
+void showFixedPointTest(){
+
+    double a = 13.999, b = 300.2222222222, c = -2.8999999999;
+
+    fixedPoint a_fp( 1, 8, 8, LSB_TRUCATE);
+    fixedPoint b_fp( 1, 8, 8, LSB_JAMMING | BIT_SATURATE );
+    fixedPoint c_fp( 1, 8, 8, LSB_TRUCATE | BIT_SATURATE );
+    fixedPoint d_fp( 1, 8, 8, LSB_TRUCATE);;
+
+
+    a_fp.fromDouble(13.999);
+    b_fp.fromDouble(300.2222222222);
+    c_fp.fromDouble(-2.8999999999);
+    d_fp.fromDouble(1.01);
+
+    a_fp.print();
+    //b_fp.print();
+
+    //c_fp.print();
+    d_fp.print();
+
+    a_fp + d_fp;
+    a_fp.print();
 }
