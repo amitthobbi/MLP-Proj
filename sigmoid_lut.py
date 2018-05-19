@@ -62,7 +62,7 @@ for x in np.arange(0.0, stop, (stop/steps)):
     sigmoid_str += str(fp)
     cnt += 1
     if cnt < steps:
-        sigmoid_str += ","
+        sigmoid_str += "\n"
 
 # Write result to file:
 with open(outfile, "w") as out_file:

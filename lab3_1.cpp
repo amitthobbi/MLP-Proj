@@ -268,6 +268,7 @@ void train(int input[],int target_in){
     /*************************** BACK PROPOGATION ************************/
 
     // Calculate the error terms for the output
+            // THIS IS BACKWARD?
     for(i=0; i < OUTPUT_LAYERS; i++){
         error_output[i] = der_sigmoid(output_activations[i]) * (target[i] - output_activations[i]);
         //printf("Error term for output % is %f\n",i,error_output[i]);
