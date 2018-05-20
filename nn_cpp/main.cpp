@@ -14,7 +14,7 @@
 
 //#include "mlp.h"
 #include "csv.h"        /* CSV Parsint lib */
-#include "fixedPoint.h" /* FixedPoint Object Class */
+#include "fixed.h" /* FixedPoint Object Class */
 
 #include <iostream>
 #include <cmath>
@@ -26,7 +26,10 @@
 #include <random>
 #include <iomanip>
 
-using namespace std;
+using std::cout;
+using std::cin;
+using std::endl;
+
 
 
 /****** MLP CONFIGURATION **********/
@@ -107,7 +110,7 @@ int main() {
         }
     }
 
-    /*
+
     // Load Iris Data Set:
     // Shuffle and split up data using random distribution:
     io::CSVReader<5> iris_in(IRIS_DATA);
@@ -174,25 +177,44 @@ int main() {
  */
 void showFixedPointTest(){
 
-    double a = 13.999, b = 300.2222222222, c = -2.8999999999;
+    // Create a few 'fixed' vars:
+    fixed A( 0, 4, LSB_TRUCATE | BIT_SATURATE);
+    fixed B( 1, 8, LSB_TRUCATE);
+    fixed C( 0, 10, LSB_TRUCATE);
 
-    fixedPoint a_fp( 1, 8, 8, LSB_TRUCATE);
-    fixedPoint b_fp( 1, 8, 8, LSB_JAMMING | BIT_SATURATE );
-    fixedPoint c_fp( 1, 8, 8, LSB_TRUCATE | BIT_SATURATE );
-    fixedPoint d_fp( 1, 8, 8, LSB_TRUCATE);;
+    // Convert from static double:
+    A.fromDouble(13.01);
+    B.fromDouble(-23.01);
+    C.fromDouble(32.0009);
 
+    //cout << "C: " << C << endl;
 
-    a_fp.fromDouble(13.999);
-    b_fp.fromDouble(300.2222222222);
-    c_fp.fromDouble(-2.8999999999);
-    d_fp.fromDouble(1.01);
+    // Print:
+    cout << "Inputs\tA: " << A << "\t"  << "B: " << B << "\t" << "C: " << C << endl;
+    A += B;
+    cout << "Addition: A += B" << endl;
+    cout << "A = " << A << "\tB = " << B << endl;
 
-    a_fp.print();
-    //b_fp.print();
+    // Reset A and add to B
+    A.fromDouble(13.001);
+    B +=A;
+    cout << "A: " << A << endl;
+    cout << "Addition: B += A" << endl;
+    cout << "A = " << A << "\tB = " << B << endl;
 
-    //c_fp.print();
-    d_fp.print();
+    // Mul Test
+    C*=B;
+    cout << "Mul. C *= B, C = " << C << endl;
 
-    a_fp + d_fp;
-    a_fp.print();
+    // Div Test
+    C/=B;
+    cout << "Div. C /= B, C = " << C << endl;
+
+    // Decrement
+    C--;
+    cout << "Decrement. C-- = " << C << endl;
+
+    // Increment
+    C++;
+    cout << "Increment. C++ = " << C << endl;
 }
