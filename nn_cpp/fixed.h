@@ -47,10 +47,17 @@ using std::ostream;
 #define LSB_JAMMING     0x1U     // LSB Always 1
 #define LSB_ROUND       0x2U     // Round to Even
 #define BIT_SATURATE    0x4U     // Saturate Value on OVF/UNF
+#define IS_FRACTIONAL   0x8U     // When MSB flag set - treat number as fractional component
 
 // Macros
 #define fracSize() (bit_width - (size_int + num_zeros + _signed))
 
+#define decimate(temp) for(;;){ \
+    if(temp < 1){   \
+        break;  \
+        }   \
+        temp = temp / 10;   \
+    }   \
 
 /**
  * Fixed Point Class
@@ -113,6 +120,7 @@ class fixed {
         void operator/=(fixed &fp_input);       // Divide
 
         fixed& operator=(fixed& fp_input);      // Assignment Operator (copy into 'this' config)
+        //fixed& operator=(fixed fp_input);      // Assignment Operator (copy into 'this' config)
 
         friend ostream& operator<<(ostream& os, fixed &fp_input);       // STD::COUT operator
 
@@ -136,7 +144,8 @@ class fixed {
         double num_double;      // Double Value (rounded / truncated to spec)
 
         // Private Functions
-        u16 doDisposal(u32 input, u16 size, u8 &ovfl);              // Perform Disposal Functions
+        u16 disposeInt(u32 input, u16 size, u8 &ovfl);              // Perform Disposal Functions
+        u16 disposeFrac(u32 input, u16 size, u8 &ovfl);             // Perform Disposal Functions
         u16 lsbTruncate(u16 input, u16 size);                       // Truncate
         u16 lsbJamming(u16 input, u16 size);                        // Jam
         u16 lsbRounding(u16 input, u16 size, u8 &ovfl);             // Rounding

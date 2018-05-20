@@ -26,9 +26,9 @@ import os
 # 256 Entries for 8-bit LUT
 
 filename = "sigmoid_lut_0_1.csv"    # Output File Name
-stop = 1.0                          # End Value (of x range)
+stop = 8.0                          # End Value (of x range)
 steps = 256                         # Number of table entries
-precision = 15                      # Size of Fixed Point "Fractional Component" (unsigned)
+precision = 16                      # Size of Fixed Point "Fractional Component" (unsigned)
 
 # Output File Path and Name:
 outfile = os.path.join(os.path.dirname(os.path.realpath(__file__)), filename)

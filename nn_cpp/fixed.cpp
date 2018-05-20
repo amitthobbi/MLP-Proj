@@ -73,7 +73,7 @@ double fixed::getDouble(){
  */
 void fixed::setInt(u16 input){
     u8 ovfl;
-    num_int = doDisposal(input, size_int, ovfl);    // Make input fit.
+    num_int = disposeInt(input, size_int, ovfl);    // Make input fit.
     toDouble();
 
     // Discard Overflow - Saturation or Truncate will handle this.
@@ -89,8 +89,14 @@ void fixed::setInt(u16 input){
 void fixed::setFrac(u16 input){
 
     u8 ovfl;
-    num_frac = doDisposal(input, maxSize(fracSize()), ovfl);    // Make input fit.
+    num_frac = disposeFrac(input, maxSize(fracSize()), ovfl);    // Make input fit.
     toDouble();
+
+    //DEBUG
+    //cout << "setFrac( " << input << " )\toutput = " << num_frac << endl;
+    //cout << "maxSize: " << maxSize(fracSize()) << endl;
+    //cout << "fracSize: " << fracSize() << endl;
+    //cout << "size_int: " << (int) size_int << endl;
 
     if(ovfl){
         auto temp = num_double + 1;
@@ -102,17 +108,24 @@ void fixed::setFrac(u16 input){
 
 /**
  * Convert a double into a FP structure:
+ * NOTE: This function is a BITCH!
+ * Don't trust it, it keeps finding new and interesting
+ * ways to piss me off. Good luck!
  * NOT A 'SIMULATION' FUNCTION - REQUIRED FOR PARSING TYPES
  * @param input
  */
 void fixed::fromDouble(double input){
 
-    double temp_d = 0, tmp_dsplit = 0, _fraction = input;
-    int _int;
-    u16 maxFrac, temp_i = 0;
+    // Conversion Vars:
+    double temp_d = 0, tmp_dsplit = 0;              // Temps
+    double _fraction = input, _previous = input;    // Temps
+    int _int;           // Temp int result
+    u32 temp_ui;        // temp float result
+    u16 maxFrac;        // maximum fraction value (calculated)
 
     u8 ovfl = 0;        // Rounding Overflow
     u8 zero_cnt = 0;    // # of leading zeros
+
 
     // Get Sign:
     if(_fraction < 0){
@@ -121,6 +134,10 @@ void fixed::fromDouble(double input){
         if(_signed){
             num_sign = 1;
         }
+
+    }
+    else{
+        num_sign = 0;
     }
 
     // Split up double:
@@ -160,41 +177,41 @@ void fixed::fromDouble(double input){
             // Split and check:
             tmp_dsplit = modf(_fraction , &temp_d);
 
-            // Break when fraction == 0
-            if( tmp_dsplit == 0 || temp_d >= maxFrac ){
+            // Break when fraction == 0 (all numbers to the left of the decimal point now)
+            if( tmp_dsplit == 0 ){
                 break;
             }
 
             // Catch double cast error (== 0.1 * 10):
             if((float) tmp_dsplit == 1 && temp_d == 0){
-                num_frac = 1;
+                temp_ui = 1;
                 break;
             }
 
-            _fraction = _fraction * 10;
-            num_frac = (u16) temp_d;
-        }
-
-        // Round Result (if required)
-        if(mode & LSB_ROUND && _fraction >= 5){
-            num_frac = 1;
-            if(num_zeros){
-                num_zeros --;
+            // Catch Overflow
+            if( temp_d >= maxFrac ){
+                // Should return previous value
+                temp_ui = (u32) _previous;
+                break;
             }
+
+            // Shift fraction over 1 decimal place
+            _previous = _fraction;
+            _fraction = _fraction * 10;
+            temp_ui = (u32) _fraction;
         }
 
-
+        // Save Fractional Comp.
+        num_frac = disposeFrac(temp_ui, maxFrac, ovfl);
     }
     else{
-        num_frac = 0;   // Result was zer
-        maxFrac = maxSize( fracSize() );
+
+        // Zero fractional comp.
+        num_frac = 0;
     }
 
-    // Save Fractional Comp.
-    num_frac = doDisposal(num_frac, maxFrac, ovfl);
-
     // Get Integer Comp (with overflow from decimal conversion)
-    num_int = doDisposal( (u32) _int + ovfl, max_int, ovfl);
+    num_int = disposeInt((u32) _int + ovfl, max_int, ovfl);
 
     // Update Internal Double
     toDouble();
@@ -363,57 +380,111 @@ fixed& fixed::operator =(fixed& fp_input){
 }
 
 
+/**
+ * Assignment operator (=) Overload
+ * @param fp_input
+ */
+/*
+fixed& fixed::operator =(fixed fp_input){
+
+    // Check for self before copy:
+    if(&fp_input != this){
+        this->fromDouble(fp_input.getDouble());
+        return *this;
+    }
+
+    return *this;
+}
+*/
 
 /********** Private Functions - Bit Disposal **********/
 
 
 
 /**
- * Bit Disposal Routine for UNSIGNED INTEGERS ONLY
+ * Bit Disposal Routine for Fractional Component
  * @param input Input Value
  * @param size Size of result
  * @param mode Mode Bits
  * @return
  */
-u16 fixed::doDisposal(u32 input, u16 size, u8 &ovfl){
+u16 fixed::disposeFrac(u32 input, u16 size, u8 &ovfl){
 
-    u16 temp;
+    u32 temp = input;
+    double d_temp = input;
+    double unused;
+    double remainder = 0;
+
 
     // Check Saturation:
     if(input > size){
-        // Saturate
-        if(mode & BIT_SATURATE){
-            temp = MAX_INT16;
-        }
-        else{
-            for(;;){
-                // Shift right for bit reduction (16-bit)
-                input = input >> 1U;
-                if(input <= MAX_INT16){
-                    temp = (u16) input;
-                    break;
-                }
+
+        // Push decimal point right
+        for(;;) {
+
+            d_temp = d_temp / 10;
+            temp = temp / 10;
+            remainder = modf(d_temp , &unused);
+
+            if (temp <= size) {
+                break;
             }
         }
-    }
-    else{
-        // Truncate Upper 16 bits
-        temp = (u16) input;
+
+        // Fractional Rounding
+        if( (mode & LSB_ROUND) && remainder >= 0.5 ){
+            return (u16) temp + 1;
+        }
+
+        // Jamming into LSB
+        if(mode & LSB_JAMMING){
+            return (u16) temp | 0x1U;
+        }
+
+        return (u16) temp;
     }
 
-    // Do bit disposal
-    if(mode & LSB_ROUND){
-        return lsbRounding(temp, size, ovfl);
-    }
-
-    if(mode & LSB_JAMMING){
-        return lsbJamming(temp, size);
-    }
-
-    return lsbTruncate(temp, size);
+    // No disposal required
+    return (u16) input;
 
 }
 
+
+/**
+ * Int Component. Disposal (bit reduction)
+ * @param input
+ * @param size
+ * @param ovfl
+ * @return
+ */
+u16 fixed::disposeInt(u32 input, u16 size, u8 &ovfl){
+
+    u32 temp = input;
+
+    // Check Saturation:
+    if(input > size){
+
+        if( mode & BIT_SATURATE){
+            return lsbTruncate(MAX_INT16, size);
+        }
+
+        // Rounding
+        if( mode & LSB_ROUND){
+            return lsbRounding(temp, size, ovfl);
+        }
+
+        // Bit Jamming
+        if( mode & LSB_JAMMING){
+            return lsbJamming(temp, size);
+        }
+
+        // Default is to truncate (not good)
+        return lsbTruncate(temp, size);
+    }
+
+    // No Disposal Required
+    return (u16) input;
+}
 
 
 /**
